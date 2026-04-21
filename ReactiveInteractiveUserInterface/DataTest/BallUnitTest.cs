@@ -17,20 +17,31 @@ namespace TP.ConcurrentProgramming.Data.Test
     public void ConstructorTestMethod()
     {
       Vector testinVector = new Vector(0.0, 0.0);
-      Ball newInstance = new(testinVector, testinVector);
+      Ball newInstance = new(testinVector, testinVector, 20, 10);
     }
 
     [TestMethod]
     public void MoveTestMethod()
     {
       Vector initialPosition = new(10.0, 10.0);
-      Ball newInstance = new(initialPosition, new Vector(0.0, 0.0));
+      Ball newInstance = new(initialPosition, new Vector(0.0, 0.0), 20, 10);
       IVector curentPosition = new Vector(0.0, 0.0);
+
+      using ManualResetEventSlim waiter = new ManualResetEventSlim(false);
       int numberOfCallBackCalled = 0;
-      newInstance.NewPositionNotification += (sender, position) => { Assert.IsNotNull(sender); curentPosition = position; numberOfCallBackCalled++; };
-      newInstance.Move(new Vector(0.0, 0.0));
-      Assert.AreEqual<int>(1, numberOfCallBackCalled);
+      newInstance.NewPositionNotification += (sender, position) => { 
+        Assert.IsNotNull(sender); 
+        curentPosition = position; 
+        numberOfCallBackCalled++;
+
+        waiter.Set();
+      };
+      waiter.Wait(1000);
+
+      Assert.IsTrue(numberOfCallBackCalled > 0);
       Assert.AreEqual<IVector>(initialPosition, curentPosition);
+
+      newInstance.Dispose();
     }
   }
 }

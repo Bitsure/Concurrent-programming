@@ -65,5 +65,27 @@ namespace TP.ConcurrentProgramming.Data
       Dispose(disposing: true);
       GC.SuppressFinalize(this);
     }
-  }
+
+				#region TestingInfrastructure
+
+				[Conditional("DEBUG")]
+				internal void CheckBallsList(Action<IEnumerable<IBall>> returnBallsList)
+				{
+						returnBallsList(BallsList);
+				}
+
+				[Conditional("DEBUG")]
+				internal void CheckNumberOfBalls(Action<int> returnNumberOfBalls)
+				{
+						returnNumberOfBalls(BallsList.Count);
+				}
+
+				[Conditional("DEBUG")]
+				internal void CheckObjectDisposed(Action<bool> returnInstanceDisposed)
+				{
+						returnInstanceDisposed(Disposed);
+				}
+
+				#endregion TestingInfrastructure
+		}
 }
