@@ -12,39 +12,53 @@ namespace TP.ConcurrentProgramming.Data
 {
   internal class Ball : IBall
   {
-    #region ctor
+				public event EventHandler<IVector>? NewPositionNotification;
+    public IVector Velocity {  get; set; }
+    public IVector Position { get; set; }
+    public double Mass { get; }
+    public double Radius { get; }
 
-    internal Ball(Vector initialPosition, Vector initialVelocity)
+    // Zmienna odpowiedzialna za zatrzymanie pętli, a co za tym idzie wątków
+    private bool stopped = false;
+    private readonly object positionLock = new object();
+
+				internal Ball(Vector initialPosition, Vector initialVelocity, double mass, double radius)
     {
       Position = initialPosition;
       Velocity = initialVelocity;
+      Mass = mass;
+      Radius = radius;
+
+      Task.Run(Move);
     }
 
-    #endregion ctor
-
-    #region IBall
-
-    public event EventHandler<IVector>? NewPositionNotification;
-
-    public IVector Velocity { get; set; }
-
-    #endregion IBall
-
-    #region private
-
-    private Vector Position;
 
     private void RaiseNewPositionChangeNotification()
     {
       NewPositionNotification?.Invoke(this, Position);
     }
 
-    internal void Move(Vector delta)
+    private async Task Move()
     {
-      Position = new Vector(Position.x + delta.x, Position.y + delta.y);
-      RaiseNewPositionChangeNotification();
+      // Wykonywanie zadania do momentu zasygnalizowania chęci usunięcia obiektu
+      while(!stopped)
+      {
+
+        // Zapewnienie, że operacja zmiany pozycji wykona się w całości
+        lock (positionLock)
+        {
+          Position = new Vector(Position.x + Velocity.x, Position.y + Velocity.y);
+        }
+
+        // Zakomunikowanie warstwie wyżej o zmianie pozycji kuli
+								RaiseNewPositionChangeNotification();
+								await Task.Delay(16);
+						}
     }
 
-    #endregion private
+    public void Dispose()
+    {
+      stopped = true;
+    }
   }
 }
